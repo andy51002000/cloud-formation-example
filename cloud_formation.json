@@ -96,7 +96,7 @@
                                 "MIME-Version: 1.0 \n",
                                 "\n",
                                 "#include\n",
-                                "https://csg9xa81.blob.core.windows.net/test123/init.sh?sp=r&st=2019-06-11T02:23:37Z&se=2030-06-11T10:23:37Z&spr=https&sv=2018-03-28&sig=h6cZ77oCwp8mbX71gQPaMgpGpfLdhAHwNs%2FZcYueHgc%3D&sr=b",
+                                "https://raw.githubusercontent.com/andy51002000/cloud-formation-example/master/init.sh",
                                 "\n",
                                 "--//\n",
                                 "Content-Type: text/x-shellscript; charset=\"us-ascii\"\n",
