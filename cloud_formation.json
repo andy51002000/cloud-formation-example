@@ -1,0 +1,249 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "82c136a5-fae5-45cd-97cc-f9edd12a0950": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 60,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "7ddb4173-36ee-4a0d-a300-fcb12f21740e": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 180,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": [],
+                "isassociatedwith": [
+                    "82c136a5-fae5-45cd-97cc-f9edd12a0950"
+                ]
+            },
+            "b3c130e2-d86a-49f5-ba98-09989f93ad7e": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 300,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": [],
+                "isassociatedwith": [
+                    "82c136a5-fae5-45cd-97cc-f9edd12a0950"
+                ]
+            }
+        }
+    },
+    "Parameters": {
+        "myVPC": {
+            "Type": "String",
+            "Default": "vpc-da58b9b1"
+        },
+        "mykeyName": {
+            "Type": "String",
+            "Default": "app123"
+        },
+        "BuildNumber": {
+            "Type": "String",
+            "Default": "1",
+            "Description": "Number of the build being deployed"
+        }
+    },
+    "Resources": {
+        "LaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "ImageId": "ami-0986c2ac728528ac2",
+                "InstanceType": "t2.micro",
+                "KeyName": { "Ref": "mykeyName" },
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroup"
+                    }
+                ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": 20,
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": true
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "Content-Type: multipart/mixed; boundary=\"//\"\n",
+                                "MIME-Version: 1.0\n",
+                                "\n",
+                                "--//\n",
+                                "Content-Type: text/x-include-url; charset=\"us-ascii\"\n",
+                                "MIME-Version: 1.0 \n",
+                                "\n",
+                                "#include\n",
+                                "https://csg9xa81.blob.core.windows.net/test123/init.sh?sp=r&st=2019-06-11T02:23:37Z&se=2030-06-11T10:23:37Z&spr=https&sv=2018-03-28&sig=h6cZ77oCwp8mbX71gQPaMgpGpfLdhAHwNs%2FZcYueHgc%3D&sr=b",
+                                "\n",
+                                "--//\n",
+                                "Content-Type: text/x-shellscript; charset=\"us-ascii\"\n",
+                                "MIME-Version: 1.0\n",
+                                "\n",
+                                "#!/bin/bash\n",
+                                "touch /tmp/cloud-init-was-here\n",
+                                "touch /tmp/ver-", { "Ref": "BuildNumber" }, "\n",
+                                "apt install -y python-pip\n",
+                                "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                                 "# Signal the status from cfn-init\n",
+                                 "/usr/local/bin/cfn-signal -s true",
+                                 "         --stack ", { "Ref" : "AWS::StackName" },
+                                 "         --resource AutoScalingGroup ",
+                                 "         --region ", { "Ref" : "AWS::Region" }, 
+                                 "\n",
+                                "\n",
+                                "--//\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "b3c130e2-d86a-49f5-ba98-09989f93ad7e"
+                }
+            }
+        },
+        "LoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroup"
+                    }
+                ],
+                "Scheme": "internet-facing",
+                "Subnets": [
+                    "subnet-cf5610b5",
+                    "subnet-3346e87f",
+                    "subnet-0351596b"
+                ],
+                "Listeners": [
+                    {
+                        "InstancePort": "80",
+                        "InstanceProtocol": "HTTP",
+                        "LoadBalancerPort": "80",
+                        "Protocol": "HTTP"
+                    },
+                    {
+                        "InstancePort": "5000",
+                        "InstanceProtocol": "HTTP",
+                        "LoadBalancerPort": "5000",
+                        "Protocol": "HTTP"
+                    }
+                ],
+                "HealthCheck": {
+                    "Target": "HTTP:5000/",
+                    "Timeout": "5",
+                    "Interval": "30",
+                    "UnhealthyThreshold": "2",
+                    "HealthyThreshold": "2"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "7ddb4173-36ee-4a0d-a300-fcb12f21740e"
+                }
+            }
+        },
+        "SecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow http to client host",
+                "VpcId": {
+                    "Ref": "myVPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "FromPort": 5000,
+                        "IpProtocol": "tcp",
+                        "CidrIp": "0.0.0.0/0",
+                        "ToPort": 5000
+                    },
+                    {
+                        "FromPort": 22,
+                        "IpProtocol": "tcp",
+                        "CidrIp": "0.0.0.0/0",
+                        "ToPort": 22
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "82c136a5-fae5-45cd-97cc-f9edd12a0950"
+                }
+            }
+        },
+        "AutoScalingGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": [
+                    "us-east-2a",
+                    "us-east-2b",
+                    "us-east-2c"
+                ],
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfig"
+                },
+                "MinSize": "1",
+                "MaxSize": "4",
+                "DesiredCapacity": "1",
+                "HealthCheckType": "ELB",
+                "HealthCheckGracePeriod": "1800",
+                "LoadBalancerNames": [
+                    {
+                        "Ref": "LoadBalancer"
+                    }
+                ]
+            },
+            "UpdatePolicy": {
+                "AutoScalingRollingUpdate": {
+                    "MinInstancesInService": "1",
+                    "MaxBatchSize": "1",
+                    "WaitOnResourceSignals": "true",
+                    "PauseTime": "PT40M"
+                }
+            },
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": "1",
+                    "Timeout": "PT40M"
+                }
+            }
+        }
+    }
+}
