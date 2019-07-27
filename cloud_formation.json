@@ -105,7 +105,7 @@
                                 "#!/bin/bash\n",
                                 "touch /tmp/cloud-init-was-here\n",
                                 "touch /tmp/ver-", { "Ref": "BuildNumber" }, "\n",
-                                "apt install -y python-pip\n",
+                                "apt update && apt install -y python-pip\n",
                                 "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
                                  "# Signal the status from cfn-init\n",
                                  "/usr/local/bin/cfn-signal -s true",
